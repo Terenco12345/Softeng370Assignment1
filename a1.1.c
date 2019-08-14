@@ -100,42 +100,6 @@ void one_thread_merge_sort(struct block *data){
 	merge_sort(data);
 }
 
-/* Step 3 */
-void *too_many_threads_merge_sort(void *data){
-	struct block *my_data = data;
-
-	if (my_data->size > 1) {
-		struct block left_block;
-		struct block right_block;
-		left_block.size = my_data->size / 2;
-		left_block.first = my_data->first;
-		right_block.size = left_block.size + (my_data->size % 2);
-		right_block.first = my_data->first + left_block.size;
-
-		// Thread for the left block
-		pthread_t thread1_id;
-		pthread_attr_t thread1_attr;
-		pthread_attr_init(&thread1_attr);
-		pthread_attr_setstacksize(&thread1_attr, 10000000);
-		pthread_create(&thread1_id, &thread1_attr, too_many_threads_merge_sort, (void *)&left_block);
-
-		// Thread for the right block
-		pthread_t thread2_id;
-		pthread_attr_t thread2_attr;
-		pthread_attr_init(&thread2_attr);
-		pthread_attr_setstacksize(&thread2_attr, 10000000);
-		pthread_create(&thread2_id, &thread2_attr, too_many_threads_merge_sort, (void *)&right_block);
-
-		// Wait for threads to join before merging
-		pthread_join(thread1_id, NULL);
-		pthread_join(thread2_id, NULL);
-
-		merge(&left_block, &right_block);
-	}
-}
-
-/* Step 4 */
-
 
 int main(int argc, char *argv[]) {
 	// Print data of the original process stack limit
@@ -174,7 +138,7 @@ int main(int argc, char *argv[]) {
 
 	// Sort the block.
 	printf("starting---\n");
-	too_many_threads_merge_sort(&start_block);
+	one_thread_merge_sort(&start_block);
 	printf("---ending\n");
 
 	// Check if the block is sorted properly.

@@ -71,24 +71,6 @@ bool is_sorted(int data[], int size) {
 	return sorted;
 }
 
-/* Merge sort algorithm, but the input and function match the types necessary to
- * be passed into a pthread. */
-void *merge_sort_threaded(void *data) {
-	struct block *my_data = data;
-
-	if (my_data->size > 1) {
-		struct block left_block;
-		struct block right_block;
-		left_block.size = my_data->size / 2;
-		left_block.first = my_data->first;
-		right_block.size = left_block.size + (my_data->size % 2);
-		right_block.first = my_data->first + left_block.size;
-		merge_sort(&left_block);
-		merge_sort(&right_block);
-		merge(&left_block, &right_block);
-	}
-}
-
 void print_stack_rlimit(){
 	struct rlimit rlimit;
 	getrlimit(RLIMIT_STACK, &rlimit);
@@ -114,6 +96,8 @@ void *too_many_threads_merge_sort(void *data){
 		pthread_attr_setstacksize(&thread1_attr, 10000000);
 		pthread_create(&thread1_id, &thread1_attr, too_many_threads_merge_sort, (void *)&left_block);
 
+		pthread_join(thread1_id, NULL);
+		
 		// Thread for the right block
 		pthread_t thread2_id;
 		pthread_attr_t thread2_attr;
@@ -121,8 +105,6 @@ void *too_many_threads_merge_sort(void *data){
 		pthread_attr_setstacksize(&thread2_attr, 10000000);
 		pthread_create(&thread2_id, &thread2_attr, too_many_threads_merge_sort, (void *)&right_block);
 
-		// Wait for threads to join before merging
-		pthread_join(thread1_id, NULL);
 		pthread_join(thread2_id, NULL);
 
 		merge(&left_block, &right_block);
