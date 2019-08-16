@@ -7,6 +7,4 @@ cc ./a1.3.c -o aq3.out -pthread
 cc ./a1.4.c -o aq4.out -pthread
 cc ./a1.5.c -o aq5.out -pthread
 cc ./a1.6.c -o aq6.out -pthread
-
-
-
+cc ./a1.7.c -o aq7.out -pthread

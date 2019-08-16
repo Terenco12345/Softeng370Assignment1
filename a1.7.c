@@ -24,6 +24,9 @@ struct block {
 	int *first;
 };
 
+int processor_count;
+int active_process_count;
+
 // void print_block_data(struct block *blk) {
 //     printf("size: %d address: %p\n", blk->size, blk->first);
 // }
@@ -77,7 +80,7 @@ void print_stack_rlimit(){
 	printf("%lld", (long long int)rlimit.rlim_cur);
 }
 
-/* Step 6 */
+/* Calling this algorithm will merge sort with two forked child processes.*/
 void forked_merge_sort(struct block *data){
 	struct block left_block;
 	struct block right_block;
@@ -91,12 +94,16 @@ void forked_merge_sort(struct block *data){
 	// Initialization
 	pid_t l_child_id = -1;
 	pid_t r_child_id = -1;
+	
 	int fdl[2];
 	int fdr[2];
+	
 	int pipe_status_left = pipe(fdl);
 	int pipe_status_right = pipe(fdr);
 
 	// Process for left block
+	active_process_count++;
+	printf("Forking left block, current number of processes is %d\n", active_process_count);
 	l_child_id = fork();
 	if(l_child_id < 0){
 		// Failure to create process!
@@ -105,13 +112,20 @@ void forked_merge_sort(struct block *data){
 	} else if(l_child_id == 0){
 		// This is the left child process.
 		close(fdl[0]);
-		merge_sort(&left_block);
+		// Decide whether or not to fork.
+		if(active_process_count < processor_count-1){
+			forked_merge_sort(&left_block);
+		} else {
+			merge_sort(&left_block);
+		}
 		// Write to pipe.
 		write(fdl[1], left_block.first, left_block.size*sizeof(int));
 		exit(0);
 	}
-
+	
 	// Process for right block
+	active_process_count++;
+	printf("Forking right block, current number of processes is %d\n", active_process_count);
 	r_child_id = fork();
 	if(r_child_id < 0){
 		// Failure to create process!
@@ -120,17 +134,25 @@ void forked_merge_sort(struct block *data){
 	} else if(r_child_id == 0){
 		// This is the right child process.
 		close(fdr[0]);
-		merge_sort(&right_block);
+		// Decide whether or not to fork.
+		if(active_process_count < processor_count-1){
+			forked_merge_sort(&right_block);
+		} else {
+			merge_sort(&right_block);
+		}
 		// Write to pipe.
-		write(fdr[1], right_block.first, left_block.size*sizeof(int));
+		write(fdr[1], right_block.first, right_block.size*sizeof(int));
 		exit(0);
 	}
 	
+	// This is the parent process.
 	// Read from pipes.
 	close(fdl[1]);
 	close(fdr[1]);
 	read(fdl[0], left_block.first,left_block.size*sizeof(int));
 	read(fdr[0], right_block.first,right_block.size*sizeof(int));
+
+	active_process_count -= 2;
 	// Merge.
 	merge(&left_block, &right_block);
 }
@@ -152,6 +174,10 @@ int main(int argc, char *argv[]) {
 	printf("The stack limit after is now: ");
 	print_stack_rlimit();
 	printf("\n");
+	
+	// Initialize global variables for processor count and active processes
+	processor_count = (int)sysconf(_SC_NPROCESSORS_ONLN);
+	active_process_count = 1;
 
 	// Creation of the block of a specified size (default 2).
 	long size;
