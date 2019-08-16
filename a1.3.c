@@ -2,7 +2,7 @@
     The Merge Sort to use for Operating Systems Assignment 1 2019
     written by Robert Sheehan
 
-    Modified by: put your name here
+    Modified by: Terence Qu
     UPI: tqu593
 
     By submitting a program you are claiming that you and only you have made
@@ -45,7 +45,7 @@ void merge(struct block *left, struct block *right) {
 	memmove(left->first, combined, (left->size + right->size) * sizeof(int));
 }
 
-/* Merge sort the data. */
+/* Merge sort the data. Original algorithm supplied in the assignment. */
 void merge_sort(struct block *my_data) {
 	// print_block_data(my_data);
 	if (my_data->size > 1) {
@@ -95,8 +95,7 @@ void *too_many_threads_merge_sort(void *data){
 		pthread_attr_init(&thread1_attr);
 		pthread_attr_setstacksize(&thread1_attr, 10000000);
 		pthread_create(&thread1_id, &thread1_attr, too_many_threads_merge_sort, (void *)&left_block);
-
-		pthread_join(thread1_id, NULL);
+		
 		
 		// Thread for the right block
 		pthread_t thread2_id;
@@ -105,6 +104,7 @@ void *too_many_threads_merge_sort(void *data){
 		pthread_attr_setstacksize(&thread2_attr, 10000000);
 		pthread_create(&thread2_id, &thread2_attr, too_many_threads_merge_sort, (void *)&right_block);
 
+		pthread_join(thread1_id, NULL);
 		pthread_join(thread2_id, NULL);
 
 		merge(&left_block, &right_block);
@@ -120,7 +120,7 @@ int main(int argc, char *argv[]) {
 	// Set the stack limit to be about 10x what the default is.
 	struct rlimit rlimit;
 	getrlimit(RLIMIT_STACK, &rlimit);
-	rlimit.rlim_cur= 90000000;
+	rlimit.rlim_cur= 100000000;
 	setrlimit(RLIMIT_STACK, &rlimit);
 
 	// Print data of the process stack limit after it has been changed.

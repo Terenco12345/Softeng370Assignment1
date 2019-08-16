@@ -19,6 +19,10 @@
 
 #define SIZE    2
 
+int processor_count;
+int active_thread_count;
+pthread_mutex_t lock;
+
 struct block {
 	int size;
 	int *first;
@@ -71,6 +75,12 @@ bool is_sorted(int data[], int size) {
 	return sorted;
 }
 
+void print_stack_rlimit(){
+	struct rlimit rlimit;
+	getrlimit(RLIMIT_STACK, &rlimit);
+	printf("%lld", (long long int)rlimit.rlim_cur);
+}
+
 /* Merge sort algorithm, but the input and function match the types necessary to
  * be passed into a pthread. */
 void *merge_sort_threaded(void *data) {
@@ -83,25 +93,74 @@ void *merge_sort_threaded(void *data) {
 		left_block.first = my_data->first;
 		right_block.size = left_block.size + (my_data->size % 2);
 		right_block.first = my_data->first + left_block.size;
-		merge_sort(&left_block);
-		merge_sort(&right_block);
+
+		// Merge sort the left block
+		bool left_block_threaded = false;
+		pthread_t thread1_id;		
+		if(active_thread_count < processor_count){
+			pthread_mutex_lock(&lock);
+			active_thread_count++;
+			printf("New thread added. This brings the total count to %d\n", active_thread_count);
+			pthread_mutex_unlock(&lock);
+			pthread_attr_t thread1_attr;
+			pthread_attr_init(&thread1_attr);
+			pthread_attr_setstacksize(&thread1_attr, 45000000);
+			pthread_create(&thread1_id, &thread1_attr, merge_sort_threaded, (void *)&left_block);
+			left_block_threaded = true;
+		} else {
+			merge_sort(&left_block);
+		}
+
+		// Merge sort the right block
+		bool right_block_threaded = false;
+		pthread_t thread2_id;
+		if(active_thread_count < processor_count){
+			pthread_mutex_lock(&lock);
+			active_thread_count++;
+			printf("New thread added. This brings the total count to %d\n", active_thread_count);
+			pthread_mutex_unlock(&lock);
+			pthread_attr_t thread2_attr;
+			pthread_attr_init(&thread2_attr);
+			pthread_attr_setstacksize(&thread2_attr, 45000000);
+			pthread_create(&thread2_id, &thread2_attr, merge_sort_threaded, (void *)&right_block);
+			right_block_threaded = true;
+		} else {
+			merge_sort(&right_block);
+		}
+		
+		if(left_block_threaded == true){			
+			pthread_join(thread1_id, NULL);
+			pthread_mutex_lock(&lock);
+			active_thread_count--;
+			printf("Thread has joined. This brings the total count to %d\n", active_thread_count);
+			pthread_mutex_unlock(&lock);
+		}
+		if(right_block_threaded == true){
+			pthread_join(thread2_id, NULL);
+			pthread_mutex_lock(&lock);
+			active_thread_count--;
+			printf("Thread has joined. This brings the total count to %d\n", active_thread_count);
+			pthread_mutex_unlock(&lock);
+		}
+
+		// Merge the left and right blocks.
 		merge(&left_block, &right_block);
 	}
 }
 
-void print_stack_rlimit(){
-	struct rlimit rlimit;
-	getrlimit(RLIMIT_STACK, &rlimit);
-	printf("%lld", (long long int)rlimit.rlim_cur);
+/* Step 4 */
+void utilize_all_cores_merge_sort(struct block *data){
+	// Initialize active thread count and total number of processors.
+	active_thread_count = 0;
+	processor_count = (int)sysconf(_SC_NPROCESSORS_ONLN);
+	
+	printf("System has %d cores.\n", processor_count);
+	merge_sort_threaded(data);
 }
-
-/* Step 1 */
-void one_thread_merge_sort(struct block *data){
-	merge_sort(data);
-}
-
 
 int main(int argc, char *argv[]) {
+	
+
 	// Print data of the original process stack limit
 	printf("The stack limit before was: ");
 	print_stack_rlimit();
@@ -110,7 +169,7 @@ int main(int argc, char *argv[]) {
 	// Set the stack limit to be about 10x what the default is.
 	struct rlimit rlimit;
 	getrlimit(RLIMIT_STACK, &rlimit);
-	rlimit.rlim_cur= 90000000;
+	rlimit.rlim_cur= 720000000;
 	setrlimit(RLIMIT_STACK, &rlimit);
 
 	// Print data of the process stack limit after it has been changed.
@@ -135,12 +194,18 @@ int main(int argc, char *argv[]) {
 	for (int i = 0; i < size; i++) {
 		data[i] = rand();
 	}
+	
+	// Initialize mutex lock
+	pthread_mutex_init(&lock, NULL);	
 
 	// Sort the block.
 	printf("starting---\n");
-	one_thread_merge_sort(&start_block);
+	utilize_all_cores_merge_sort(&start_block);
 	printf("---ending\n");
 
+	// Destroy mutex lock.
+	pthread_mutex_destroy(&lock);
+	
 	// Check if the block is sorted properly.
 	printf(is_sorted(data, size) ? "sorted\n" : "not sorted\n");
 	exit(EXIT_SUCCESS);

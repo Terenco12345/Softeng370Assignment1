@@ -2,7 +2,7 @@
     The Merge Sort to use for Operating Systems Assignment 1 2019
     written by Robert Sheehan
 
-    Modified by: put your name here
+    Modified by: Terence Qu
     UPI: tqu593
 
     By submitting a program you are claiming that you and only you have made
@@ -45,7 +45,7 @@ void merge(struct block *left, struct block *right) {
 	memmove(left->first, combined, (left->size + right->size) * sizeof(int));
 }
 
-/* Merge sort the data. */
+/* Merge sort the data. Original algorithm supplied in the assignment. */
 void merge_sort(struct block *my_data) {
 	// print_block_data(my_data);
 	if (my_data->size > 1) {

@@ -1,0 +1,11 @@
+#!/bin/bash
+
+gcc ./a1.0.c -o aq0.out -lpthread
+gcc ./a1.1.c -o aq1.out -lpthread
+gcc ./a1.2.c -o aq2.out -lpthread
+gcc ./a1.3.c -o aq3.out -lpthread
+gcc ./a1.4.c -o aq4.out -lpthread
+gcc ./a1.5.c -o aq5.out -lpthread
+
+
+

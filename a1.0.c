@@ -2,7 +2,7 @@
     The Merge Sort to use for Operating Systems Assignment 1 2019
     written by Robert Sheehan
 
-    Modified by: put your name here
+    Modified by: Terence Qu
     UPI: tqu593
 
     By submitting a program you are claiming that you and only you have made
@@ -19,8 +19,8 @@
 #define SIZE    2
 
 struct block {
-	int size;
-	int *first;
+    int size;
+    int *first;
 };
 
 // void print_block_data(struct block *blk) {
@@ -41,58 +41,36 @@ void merge(struct block *left, struct block *right) {
 		combined[dest++] = left->first[l++];
 	while (r < right->size)
 		combined[dest++] = right->first[r++];
-	memmove(left->first, combined, (left->size + right->size) * sizeof(int));
+    memmove(left->first, combined, (left->size + right->size) * sizeof(int));
 }
 
 /* Merge sort the data. */
 void merge_sort(struct block *my_data) {
-	// print_block_data(my_data);
-	if (my_data->size > 1) {
-		struct block left_block;
-		struct block right_block;
-		left_block.size = my_data->size / 2;
-		left_block.first = my_data->first;
-		right_block.size = left_block.size + (my_data->size % 2);
-		right_block.first = my_data->first + left_block.size;
-		merge_sort(&left_block);
-		merge_sort(&right_block);
-		merge(&left_block, &right_block);
-	}
+    // print_block_data(my_data);
+    if (my_data->size > 1) {
+        struct block left_block;
+        struct block right_block;
+        left_block.size = my_data->size / 2;
+        left_block.first = my_data->first;
+        right_block.size = left_block.size + (my_data->size % 2);
+        right_block.first = my_data->first + left_block.size;
+        merge_sort(&left_block);
+        merge_sort(&right_block);
+        merge(&left_block, &right_block);
+    }
 }
 
 /* Check to see if the data is sorted. */
 bool is_sorted(int data[], int size) {
-	bool sorted = true;
-	for (int i = 0; i < size - 1; i++) {
-		if (data[i] > data[i + 1])
-			sorted = false;
-	}
-	return sorted;
-}
-
-void print_stack_rlimit(){
-	struct rlimit rlimit;
-	getrlimit(RLIMIT_STACK, &rlimit);
-	printf("%lld", (long long int)rlimit.rlim_cur);
+    bool sorted = true;
+    for (int i = 0; i < size - 1; i++) {
+        if (data[i] > data[i + 1])
+            sorted = false;
+    }
+    return sorted;
 }
 
 int main(int argc, char *argv[]) {
-	// Print data of the original process stack limit
-	printf("The stack limit before was: ");
-	print_stack_rlimit();
-	printf("\n");
-
-	// Set the stack limit to be about 10x what the default is.
-	struct rlimit rlimit;
-	getrlimit(RLIMIT_STACK, &rlimit);
-	rlimit.rlim_cur=90000000;
-	setrlimit(RLIMIT_STACK, &rlimit);
-
-	// Print data of the process stack limit after it has been changed.
-	printf("The stack limit after is now: ");
-	print_stack_rlimit();
-	printf("\n");
-
 	long size;
 
 	if (argc < 2) {
@@ -100,16 +78,16 @@ int main(int argc, char *argv[]) {
 	} else {
 		size = atol(argv[1]);
 	}
-	struct block start_block;
-	int data[size];
-	start_block.size = size;
-	start_block.first = data;
-	for (int i = 0; i < size; i++) {
-		data[i] = rand();
-	}
-	printf("starting---\n");
-	merge_sort(&start_block);
-	printf("---ending\n");
-	printf(is_sorted(data, size) ? "sorted\n" : "not sorted\n");
-	exit(EXIT_SUCCESS);
+    struct block start_block;
+    int data[size];
+    start_block.size = size;
+    start_block.first = data;
+    for (int i = 0; i < size; i++) {
+        data[i] = rand();
+    }
+    printf("starting---\n");
+    merge_sort(&start_block);
+    printf("---ending\n");
+    printf(is_sorted(data, size) ? "sorted\n" : "not sorted\n");
+    exit(EXIT_SUCCESS);
 }
