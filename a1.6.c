@@ -71,32 +71,14 @@ bool is_sorted(int data[], int size) {
 	return sorted;
 }
 
-/* Merge sort algorithm, but the input and function match the types necessary to
- * be passed into a pthread. */
-void *merge_sort_threaded(void *data) {
-	struct block *my_data = data;
-
-	if (my_data->size > 1) {
-		struct block left_block;
-		struct block right_block;
-		left_block.size = my_data->size / 2;
-		left_block.first = my_data->first;
-		right_block.size = left_block.size + (my_data->size % 2);
-		right_block.first = my_data->first + left_block.size;
-		merge_sort(&left_block);
-		merge_sort(&right_block);
-		merge(&left_block, &right_block);
-	}
-}
-
 void print_stack_rlimit(){
 	struct rlimit rlimit;
 	getrlimit(RLIMIT_STACK, &rlimit);
 	printf("%lld", (long long int)rlimit.rlim_cur);
 }
 
-/* Step 2 */
-void two_thread_merge_sort(struct block *data){
+/* Step 6 */
+void forked_merge_sort(struct block *data){
 	struct block left_block;
 	struct block right_block;
 
@@ -106,28 +88,52 @@ void two_thread_merge_sort(struct block *data){
 	right_block.size = left_block.size + (data->size % 2);
 	right_block.first = data->first + left_block.size;
 
-	// Initializing and starting first thread
-	printf("Starting first thread.\n");
-	pthread_t thread1_id;
-	pthread_attr_t thread1_attr;
-	pthread_attr_init(&thread1_attr);
-	pthread_attr_setstacksize(&thread1_attr, 450000000);
-	pthread_create(&thread1_id, &thread1_attr, merge_sort_threaded, (void *)&left_block);
+	// Initialization
+	pid_t l_child_id = -1;
+	pid_t r_child_id = -1;
+	int fdl[2];
+	int fdr[2];
+	int pipe_status_left = pipe(fdl);
+	int pipe_status_right = pipe(fdr);
 
-	// Initializing and starting first thread
-	printf("Starting second thread.\n");
-	pthread_t thread2_id;
-	pthread_attr_t thread2_attr;
-	pthread_attr_init(&thread2_attr);
-	pthread_attr_setstacksize(&thread2_attr, 450000000);
-	pthread_create(&thread2_id, &thread2_attr, merge_sort_threaded, (void *)&right_block);
-
-	pthread_join(thread1_id, NULL);
-	printf("Finishing first thread.\n");
-	pthread_join(thread2_id, NULL);
-	printf("Finishing second thread.\n");
-
-	merge(&left_block, &right_block);
+	// Process for left block
+	l_child_id = fork();
+	if(l_child_id < 0){
+		// Failure to create process!
+		printf("Failure to create left block process.");
+		exit(1);
+	} else if(l_child_id == 0){
+		// This is the left child process.
+		close(fdl[0]);
+		merge_sort(&left_block);
+		write(fdl[1], left_block.first, left_block.size*sizeof(int));
+		// Write to pipe.
+		exit(0);
+	} else {
+		// This is the parent process. Start another process for the right block.
+		r_child_id = fork();
+		if(r_child_id < 0){
+			// Failure to create process!
+			printf("Failure to create right block process.");
+			exit(1);
+		} else if(r_child_id == 0){
+			// This is the right child process.
+			close(fdr[0]);
+			merge_sort(&right_block);
+			// Write to pipe.
+			write(fdr[1], right_block.first, left_block.size*sizeof(int));
+			exit(0);
+		} else {
+			// This is the parent process.
+			// Read from pipe.
+			close(fdl[1]);
+			close(fdr[1]);
+			read(fdl[0], left_block.first,left_block.size*sizeof(int));
+			read(fdr[0], right_block.first,right_block.size*sizeof(int));
+			// Merge.
+			merge(&left_block, &right_block);
+		}
+	}
 }
 
 
@@ -168,7 +174,7 @@ int main(int argc, char *argv[]) {
 
 	// Sort the block.
 	printf("starting---\n");
-	two_thread_merge_sort(&start_block);
+	forked_merge_sort(&start_block);
 	printf("---ending\n");
 
 	// Check if the block is sorted properly.

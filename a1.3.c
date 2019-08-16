@@ -93,7 +93,7 @@ void *too_many_threads_merge_sort(void *data){
 		pthread_t thread1_id;
 		pthread_attr_t thread1_attr;
 		pthread_attr_init(&thread1_attr);
-		pthread_attr_setstacksize(&thread1_attr, 10000000);
+		pthread_attr_setstacksize(&thread1_attr, 100000000);
 		pthread_create(&thread1_id, &thread1_attr, too_many_threads_merge_sort, (void *)&left_block);
 		
 		
@@ -101,7 +101,7 @@ void *too_many_threads_merge_sort(void *data){
 		pthread_t thread2_id;
 		pthread_attr_t thread2_attr;
 		pthread_attr_init(&thread2_attr);
-		pthread_attr_setstacksize(&thread2_attr, 10000000);
+		pthread_attr_setstacksize(&thread2_attr, 100000000);
 		pthread_create(&thread2_id, &thread2_attr, too_many_threads_merge_sort, (void *)&right_block);
 
 		pthread_join(thread1_id, NULL);
@@ -120,7 +120,7 @@ int main(int argc, char *argv[]) {
 	// Set the stack limit to be about 10x what the default is.
 	struct rlimit rlimit;
 	getrlimit(RLIMIT_STACK, &rlimit);
-	rlimit.rlim_cur= 100000000;
+	rlimit.rlim_cur= 1000000000;
 	setrlimit(RLIMIT_STACK, &rlimit);
 
 	// Print data of the process stack limit after it has been changed.

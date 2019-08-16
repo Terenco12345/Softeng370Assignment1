@@ -110,7 +110,7 @@ int main(int argc, char *argv[]) {
 	// Set the stack limit to be about 10x what the default is.
 	struct rlimit rlimit;
 	getrlimit(RLIMIT_STACK, &rlimit);
-	rlimit.rlim_cur= 90000000;
+	rlimit.rlim_cur= 900000000;
 	setrlimit(RLIMIT_STACK, &rlimit);
 
 	// Print data of the process stack limit after it has been changed.
