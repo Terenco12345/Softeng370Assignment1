@@ -82,7 +82,7 @@ void print_stack_rlimit(){
 	printf("%lld", (long long int)rlimit.rlim_cur);
 }
 
-/* Step 8 */
+/* Step 8, similar to step 6 but using mmap instead of pipes. */
 void forked_merge_sort(struct block *data){
 	struct block left_block;
 	struct block right_block;

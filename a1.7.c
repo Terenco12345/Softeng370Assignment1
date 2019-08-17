@@ -81,7 +81,7 @@ void print_stack_rlimit(){
 	printf("%lld", (long long int)rlimit.rlim_cur);
 }
 
-/* Calling this algorithm will merge sort with two forked child processes.*/
+/* Step 7, merge sorts with as many forked processes as processors.*/
 void forked_merge_sort(struct block *data){
 	struct block left_block;
 	struct block right_block;

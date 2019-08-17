@@ -71,13 +71,14 @@ bool is_sorted(int data[], int size) {
 	return sorted;
 }
 
+/* Print stack limit of this process to the console. */
 void print_stack_rlimit(){
 	struct rlimit rlimit;
 	getrlimit(RLIMIT_STACK, &rlimit);
 	printf("%lld", (long long int)rlimit.rlim_cur);
 }
 
-/* Step 3 */
+/* Step 3, merge sort where new threads are called whenever mergesort is called. */
 void *too_many_threads_merge_sort(void *data){
 	struct block *my_data = data;
 

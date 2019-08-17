@@ -75,6 +75,7 @@ bool is_sorted(int data[], int size) {
 	return sorted;
 }
 
+/* Print stack limit of this process to the console. */
 void print_stack_rlimit(){
 	struct rlimit rlimit;
 	getrlimit(RLIMIT_STACK, &rlimit);
@@ -148,7 +149,7 @@ void *merge_sort_threaded(void *data) {
 	}
 }
 
-/* Step 4 */
+/* Step 4, uses as many threads as cores to merge sort. */
 void utilize_all_cores_merge_sort(struct block *data){
 	// Initialize active thread count and total number of processors.
 	active_thread_count = 0;

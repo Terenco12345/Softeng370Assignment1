@@ -148,7 +148,8 @@ void *merge_sort_threaded(void *data) {
 	}
 }
 
-/* Step 4's algorithm, but merge_sort_threaded is implemented with spinlocks. */
+/* Step 5:
+ * Step 4's algorithm, but merge_sort_threaded is implemented with spinlocks. */
 void utilize_all_cores_merge_sort(struct block *data){
 	// Initialize active thread count and total number of processors.
 	active_thread_count = 0;
@@ -159,8 +160,6 @@ void utilize_all_cores_merge_sort(struct block *data){
 }
 
 int main(int argc, char *argv[]) {
-	
-
 	// Print data of the original process stack limit
 	printf("The stack limit before was: ");
 	print_stack_rlimit();

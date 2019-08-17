@@ -89,13 +89,14 @@ void *merge_sort_threaded(void *data) {
 	}
 }
 
+/* Print stack limit of this process to the console. */
 void print_stack_rlimit(){
 	struct rlimit rlimit;
 	getrlimit(RLIMIT_STACK, &rlimit);
 	printf("%lld", (long long int)rlimit.rlim_cur);
 }
 
-/* Step 1 */
+/* Step 1, uses one thread to merge sort. */
 void one_thread_merge_sort(struct block *data){
 	merge_sort(data);
 }

@@ -84,7 +84,7 @@ void print_stack_rlimit(){
 	printf("%lld", (long long int)rlimit.rlim_cur);
 }
 
-/* Calling this algorithm will merge sort with two forked child processes.*/
+/* Step 9, similar to Step 7, but using mmap instead of pipes.*/
 void forked_merge_sort(struct block *data){
 	struct block left_block;
 	struct block right_block;
