@@ -8,3 +8,5 @@ cc ./a1.4.c -o aq4.out -pthread
 cc ./a1.5.c -o aq5.out -pthread
 cc ./a1.6.c -o aq6.out -pthread
 cc ./a1.7.c -o aq7.out -pthread
+cc ./a1.8.c -o aq8.out -pthread
+cc ./a1.9.c -o aq9.out -pthread

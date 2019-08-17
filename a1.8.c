@@ -17,6 +17,8 @@
 #include <stdbool.h>
 #include <pthread.h>
 #include <sys/mman.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 
 #define SIZE    2
 
@@ -25,8 +27,7 @@ struct block {
 	int *first;
 };
 
-int processor_count;
-void* active_process_count;
+int* shared_data;
 
 // void print_block_data(struct block *blk) {
 //     printf("size: %d address: %p\n", blk->size, blk->first);
@@ -81,7 +82,7 @@ void print_stack_rlimit(){
 	printf("%lld", (long long int)rlimit.rlim_cur);
 }
 
-/* Calling this algorithm will merge sort with two forked child processes.*/
+/* Step 8 */
 void forked_merge_sort(struct block *data){
 	struct block left_block;
 	struct block right_block;
@@ -93,18 +94,10 @@ void forked_merge_sort(struct block *data){
 	right_block.first = data->first + left_block.size;
 
 	// Initialization
-	pid_t l_child_id = -1;
-	pid_t r_child_id = -1;
-	
-	int fdl[2];
-	int fdr[2];
-	
-	int pipe_status_left = pipe(fdl);
-	int pipe_status_right = pipe(fdr);
+	int l_child_id = -1;
+	int r_child_id = -1;
 
 	// Process for left block
-	*((int*)active_process_count) += 1;
-	printf("Forking left block, number of processes is %d.\n", *((int*)active_process_count));
 	l_child_id = fork();
 	if(l_child_id < 0){
 		// Failure to create process!
@@ -112,50 +105,29 @@ void forked_merge_sort(struct block *data){
 		exit(1);
 	} else if(l_child_id == 0){
 		// This is the left child process.
-		close(fdl[0]);
-		// Decide whether or not to fork.
-		if(*((int*)active_process_count) < processor_count-1){
-			forked_merge_sort(&left_block);
-		} else {
-			merge_sort(&left_block);
-		}
-		// Write to pipe.
-		write(fdl[1], left_block.first, left_block.size*sizeof(int));
-		printf("Left block fork finished.\n");
+		printf("Starting left block process.\n");
+		merge_sort(&left_block);
 		exit(0);
 	}
-	
+
 	// Process for right block
-	*((int*)active_process_count) += 1;
-	printf("Forking right block, number of processes is %d.\n", *((int*)active_process_count));
 	r_child_id = fork();
 	if(r_child_id < 0){
 		// Failure to create process!
 		printf("Failure to create right block process.\n");
 		exit(1);
 	} else if(r_child_id == 0){
-		// This is the right child process.
-		close(fdr[0]);
-		// Decide whether or not to fork.
-		if(*((int*)active_process_count) < processor_count-1){
-			forked_merge_sort(&right_block);
-		} else {
-			merge_sort(&right_block);
-		}
-		// Write to pipe.
-		write(fdr[1], right_block.first, right_block.size*sizeof(int));
-		printf("Right block fork finished.\n");
+		// This is the right child process
+		printf("Starting right block process.\n");
+		merge_sort(&right_block);
 		exit(0);
 	}
-	
-	// This is the parent process.
-	// Read from pipes.
-	close(fdl[1]);
-	close(fdr[1]);
-	read(fdl[0], left_block.first,left_block.size*sizeof(int));
-	read(fdr[0], right_block.first,right_block.size*sizeof(int));
 
-	*((int*)active_process_count) -= 2;
+	waitpid(l_child_id, NULL, WUNTRACED);
+	printf("Finishing left block process.\n");
+	waitpid(r_child_id, NULL, WUNTRACED);
+	printf("Finishing right block process.\n");
+
 	// Merge.
 	merge(&left_block, &right_block);
 }
@@ -177,12 +149,8 @@ int main(int argc, char *argv[]) {
 	printf("The stack limit after is now: ");
 	print_stack_rlimit();
 	printf("\n");
-	
-	// Initialize global variables for processor count and active processes
-	processor_count = (int)sysconf(_SC_NPROCESSORS_ONLN);
-	active_process_count = mmap(NULL, sizeof(int), PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_SHARED, -1, 0);
 
-	// Creation of the block of a specified size (default 2).
+	// Creation of the block of a specified size (default 2) with memory mapped data.
 	long size;
 
 	if (argc < 2) {
@@ -191,13 +159,14 @@ int main(int argc, char *argv[]) {
 		size = atol(argv[1]);
 	}
 	struct block start_block;
-	int data[size];
+
+	shared_data = mmap(NULL, size*sizeof(int), PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_SHARED, -1, 0);
 	start_block.size = size;
-	start_block.first = data;
+	start_block.first = shared_data;
 
 	// Populate the block with random integers.
 	for (int i = 0; i < size; i++) {
-		data[i] = rand();
+		shared_data[i] = rand();
 	}
 
 	// Sort the block.
@@ -206,6 +175,6 @@ int main(int argc, char *argv[]) {
 	printf("---ending\n");
 
 	// Check if the block is sorted properly.
-	printf(is_sorted(data, size) ? "sorted\n" : "not sorted\n");
+	printf(is_sorted(shared_data, size) ? "sorted\n" : "not sorted\n");
 	exit(EXIT_SUCCESS);
 }
